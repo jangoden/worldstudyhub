@@ -6,8 +6,8 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Blog Page | Free Next.js Template for Startup and SaaS",
-  description: "This is Blog Page for Startup Nextjs Template",
-  // other metadata
+  description: "This is Blog Page for World Study Hub",
+
 };
 
 export const dynamic = 'force-dynamic'; // Explicitly mark this page as dynamic
