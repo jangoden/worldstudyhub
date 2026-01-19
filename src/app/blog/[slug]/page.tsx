@@ -4,10 +4,12 @@ import { BlogDetailHeader } from "@/components/sections/blog/BlogDetailHeader";
 import { BlogContent } from "@/components/sections/blog/BlogContent";
 import { BlogSidebar } from "@/components/sections/blog/BlogSidebar";
 import { Newsletter } from "@/components/sections/blog/Newsletter";
+import { ViewCounter } from "@/components/sections/blog/ViewCounter";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { createClient as createStaticClient } from '@supabase/supabase-js'
+import { Metadata } from "next";
 
 export async function generateStaticParams() {
     const supabase = createStaticClient(
@@ -16,6 +18,32 @@ export async function generateStaticParams() {
     );
     const { data: posts } = await supabase.from('posts').select('slug').eq('is_published', true);
     return posts?.map(({ slug }) => ({ slug })) || [];
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+    const { slug } = await params;
+    const supabase = createStaticClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data: post } = await supabase.from('posts').select('*').eq('slug', slug).single();
+
+    if (!post) {
+        return {
+            title: 'Post Not Found',
+        }
+    }
+
+    return {
+        title: post.title,
+        description: post.excerpt || post.title,
+        openGraph: {
+            title: post.title,
+            description: post.excerpt || post.title,
+            images: post.image_url ? [post.image_url] : [],
+        }
+    }
 }
 
 export default async function BlogDetailPage({
@@ -43,6 +71,7 @@ export default async function BlogDetailPage({
 
     return (
         <div className="flex flex-col min-h-screen bg-white dark:bg-slate-950">
+            <ViewCounter slug={slug} />
             <Navbar />
 
             <main className="flex-grow w-full pt-28 pb-20">

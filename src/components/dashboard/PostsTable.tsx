@@ -100,6 +100,7 @@ export function PostsTable({ initialPosts }: { initialPosts: Post[] }) {
                             <th className="px-6 py-4 w-[40%]">Article</th>
                             <th className="px-6 py-4 text-center">Status</th>
                             <th className="px-6 py-4">Category</th>
+                            <th className="px-6 py-4 text-center">Views</th>
                             <th className="px-6 py-4">Published Date</th>
                             <th className="px-6 py-4 text-right">Actions</th>
                         </tr>
@@ -147,8 +148,8 @@ export function PostsTable({ initialPosts }: { initialPosts: Post[] }) {
                                         <button
                                             onClick={() => handleToggleStatus(post.id, post.is_published)}
                                             className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border transition-all active:scale-95 ${post.is_published
-                                                    ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
-                                                    : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600'
+                                                ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
+                                                : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600'
                                                 }`}>
                                             {post.is_published ? 'Published' : 'Draft'}
                                         </button>
@@ -157,6 +158,12 @@ export function PostsTable({ initialPosts }: { initialPosts: Post[] }) {
                                         <span className="inline-flex items-center text-sm text-slate-600 dark:text-slate-300">
                                             {post.category || 'Uncategorized'}
                                         </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <div className="flex items-center justify-center gap-1.5 text-sm text-slate-600 dark:text-slate-300 font-medium">
+                                            <Eye size={16} className="text-slate-400" />
+                                            {post.views || 0}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="text-sm text-slate-600 dark:text-slate-300">
