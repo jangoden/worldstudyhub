@@ -7,7 +7,25 @@ import { ArticleGrid } from '@/components/sections/blog/ArticleGrid';
 import { Pagination } from '@/components/sections/blog/Pagination';
 import { Newsletter } from '@/components/sections/blog/Newsletter';
 
-export default function BlogPage() {
+
+import { createClient } from '@/lib/supabase/server';
+
+export const revalidate = 60 // optional: ISR revalidation
+
+export default async function BlogPage() {
+    const supabase = await createClient()
+
+    // Fetch published posts
+    const { data: posts } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+
+    const allPosts = posts || []
+    const featuredPost = allPosts[0]
+    const otherPosts = allPosts.slice(1)
+
     return (
         <div className="flex flex-col min-h-screen">
             <Navbar />
@@ -15,8 +33,8 @@ export default function BlogPage() {
                 <BlogHeader />
                 <CategoryNav />
                 <section className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-12 lg:py-16">
-                    <FeaturedArticle />
-                    <ArticleGrid />
+                    <FeaturedArticle post={featuredPost} />
+                    <ArticleGrid posts={otherPosts} />
                     <Pagination />
                 </section>
                 <Newsletter />

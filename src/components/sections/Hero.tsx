@@ -42,25 +42,39 @@ export function Hero() {
 
                 {/* Visual */}
                 <div className="hidden lg:flex relative z-10 lg:h-[600px] items-center justify-center pointer-events-none lg:pointer-events-auto">
-                    {/* Removed existing gradient blobs to let banner show through more clearly on the right */}
                     <div className="relative w-full aspect-square max-w-lg flex items-center justify-center">
-                        <div className="absolute top-[20%] left-0 bg-white dark:bg-slate-800 p-3 rounded-lg shadow-lg border border-slate-100 dark:border-slate-700 flex items-center gap-3 animate-bounce" style={{ animationDuration: '3s' }}>
-                            <div className="size-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-400">
-                                <span className="material-symbols-outlined">verified</span>
+                        {/* Card 1: Certified */}
+                        <div className="absolute top-[15%] left-0 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex items-center gap-3 animate-bounce" style={{ animationDuration: '3s' }}>
+                            <div className="size-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-400">
+                                <span className="material-symbols-outlined text-2xl">verified</span>
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 font-semibold uppercase">Certified</p>
-                                <p className="text-sm font-bold text-slate-900 dark:text-white">Global Standard</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Accreditation</p>
+                                <p className="text-sm font-extrabold text-slate-900 dark:text-white">Global Standard</p>
                             </div>
                         </div>
 
-                        <div className="absolute bottom-[20%] right-0 bg-white dark:bg-slate-800 p-3 rounded-lg shadow-lg border border-slate-100 dark:border-slate-700 flex items-center gap-3 animate-pulse" style={{ animationDuration: '4s' }}>
-                            <div className="size-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center text-orange-600 dark:text-orange-400">
-                                <span className="material-symbols-outlined">wifi_off</span>
+                        {/* Card 2: Offline Ready */}
+                        <div className="absolute bottom-[20%] right-0 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex items-center gap-3 animate-pulse" style={{ animationDuration: '4s' }}>
+                            <div className="size-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center text-orange-600 dark:text-orange-400">
+                                <span className="material-symbols-outlined text-2xl">wifi_off</span>
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 font-semibold uppercase">Mode</p>
-                                <p className="text-sm font-bold text-slate-900 dark:text-white">Offline Ready</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Feature</p>
+                                <p className="text-sm font-extrabold text-slate-900 dark:text-white">Offline Ready</p>
+                            </div>
+                        </div>
+
+                        {/* Card 3: Success Rate */}
+                        <div className="absolute top-1/2 -right-8 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex flex-col gap-2 animate-pulse" style={{ animationDuration: '5s' }}>
+                            <div className="flex items-center gap-3">
+                                <div className="size-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                    <span className="material-symbols-outlined text-2xl">trending_up</span>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Success Rate</p>
+                                    <p className="text-sm font-extrabold text-slate-900 dark:text-white">98% Completion</p>
+                                </div>
                             </div>
                         </div>
                     </div>
