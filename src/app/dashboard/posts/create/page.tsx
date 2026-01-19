@@ -6,12 +6,15 @@ import { createClient } from '@/lib/supabase/client'
 import { TiptapEditor } from '@/components/editor/TiptapEditor'
 import { ArrowLeft, Save, Loader2, Upload, Calendar } from 'lucide-react'
 import Link from 'next/link'
+import { convertImageToWebP } from '@/utils/imageUtils'
 
 export default function CreatePostPage() {
     const [title, setTitle] = useState('')
     const [slug, setSlug] = useState('')
-    const [excerpt, setExcerpt] = useState('')
-    const [category, setCategory] = useState('')
+    // const [excerpt, setExcerpt] = useState('') // Removed as per request
+    const [categoryId, setCategoryId] = useState('')
+    const [categories, setCategories] = useState<{ id: string, name: string }[]>([])
+
     const [imageUrl, setImageUrl] = useState('')
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [uploading, setUploading] = useState(false)
@@ -23,55 +26,53 @@ export default function CreatePostPage() {
     const router = useRouter()
     const supabase = createClient()
 
-    // Auto-generate slug from title
+    // Fetch categories on mount
+    useState(() => {
+        const fetchCategories = async () => {
+            const { data } = await supabase.from('categories').select('id, name').order('name');
+            if (data) {
+                setCategories(data);
+                if (data.length > 0) setCategoryId(data[0].id); // Default to first
+            }
+        }
+        fetchCategories();
+    })
+
+    // Auto-generate slug and basic excerpt logic
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value
         setTitle(val)
-
         // Generate a clean slug
-        const generatedSlug = val
-            .toLowerCase()
-            .trim()
-            .replace(/[^\w\s-]/g, '')    // Remove non-word chars (except spaces and hyphens)
-            .replace(/[\s_-]+/g, '-')    // Replace spaces and underscores with single hyphen
-            .replace(/^-+|-+$/g, '')     // Remove leading/trailing hyphens
-
-        // Update slug only if user hasn't manually disconnected it (simple heuristic: if slug is empty or matches partial title)
+        const generatedSlug = val.toLowerCase().trim()
+            .replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '')
         setSlug(generatedSlug)
     }
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return
 
-        const file = e.target.files[0]
-        setImageFile(file)
+        const originalFile = e.target.files[0]
         setUploading(true)
 
         try {
-            const fileExt = file.name.split('.').pop()
-            const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+            // Convert to WebP
+            const convertedFile = await convertImageToWebP(originalFile, 0.8)
+
+            const fileName = `${Math.random().toString(36).substring(2)}.webp`
             const filePath = `${fileName}`
 
-            // Upload to Supabase Storage 'blog-images' bucket
-            const { error: uploadError } = await supabase.storage
-                .from('blog-images')
-                .upload(filePath, file)
-
+            const { error: uploadError } = await supabase.storage.from('blog-images').upload(filePath, convertedFile)
             if (uploadError) {
-                // If bucket doesn't exist, warn user
                 alert('Error uploading: ' + uploadError.message + '. Make sure "blog-images" bucket exists and is public.')
                 setUploading(false)
                 return
             }
-
-            // Get Public URL
-            const { data } = supabase.storage
-                .from('blog-images')
-                .getPublicUrl(filePath)
-
+            const { data } = supabase.storage.from('blog-images').getPublicUrl(filePath)
             setImageUrl(data.publicUrl)
+            setImageFile(convertedFile)
         } catch (error) {
-            alert('Error generating URL')
+            console.error(error)
+            alert('Error processing or uploading image')
         } finally {
             setUploading(false)
         }
@@ -89,23 +90,31 @@ export default function CreatePostPage() {
             return
         }
 
+        // Generate Excerpt from content (strip HTML)
+        const plainText = content.replace(/<[^>]+>/g, '');
+        const autoExcerpt = plainText.substring(0, 150) + (plainText.length > 150 ? '...' : '');
+
+        // Find category name for legacy support
+        const selectedCategory = categories.find(c => c.id === categoryId);
+
         const { error } = await supabase
             .from('posts')
             .insert({
                 title,
                 slug,
-                excerpt,
-                category,
+                excerpt: autoExcerpt, // Auto-generated
+                category: selectedCategory?.name || 'Uncategorized', // Legacy string column
+                category_id: categoryId, // New Relation
                 image_url: imageUrl,
                 content,
                 is_published: isPublished,
                 author_id: user.id,
-                created_at: new Date(publishedDate).toISOString(), // Use selected date
+                created_at: new Date(publishedDate).toISOString(),
             })
 
         if (error) {
             if (error.code === '23505') {
-                alert('Error: The URL Slug "' + slug + '" is already taken. Please change it to something unique.')
+                alert('Error: The URL Slug "' + slug + '" is already taken.')
             } else {
                 alert('Error creating post: ' + error.message)
             }
@@ -251,24 +260,23 @@ export default function CreatePostPage() {
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5">Category</label>
-                                    <input
-                                        type="text"
-                                        value={category}
-                                        onChange={(e) => setCategory(e.target.value)}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 outline-none text-sm"
-                                        placeholder="Tech, Career, etc."
-                                    />
+                                    <select
+                                        value={categoryId}
+                                        onChange={(e) => setCategoryId(e.target.value)}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 outline-none text-sm appearance-none"
+                                    >
+                                        <option value="" disabled>Select a category</option>
+                                        {categories.map((cat) => (
+                                            <option key={cat.id} value={cat.id}>
+                                                {cat.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {categories.length === 0 && (
+                                        <p className="text-xs text-red-500 mt-1">No categories found. Create one first.</p>
+                                    )}
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5">Excerpt</label>
-                                    <textarea
-                                        rows={4}
-                                        value={excerpt}
-                                        onChange={(e) => setExcerpt(e.target.value)}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 outline-none text-sm resize-none"
-                                        placeholder="Short summary..."
-                                    />
-                                </div>
+                                {/* Excerpt removed as requested */}
                             </div>
                         </div>
                     </div>

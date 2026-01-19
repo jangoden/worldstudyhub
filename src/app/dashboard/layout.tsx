@@ -10,7 +10,8 @@ import {
     Settings,
     LogOut,
     Menu,
-    X
+    X,
+    Tags
 } from 'lucide-react'
 
 export default function DashboardLayout({
@@ -18,10 +19,15 @@ export default function DashboardLayout({
 }: {
     children: React.ReactNode
 }) {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const pathname = usePathname()
     const router = useRouter()
     const supabase = createClient()
+
+    // Auto-close sidebar on route change (mobile)
+    useEffect(() => {
+        setIsSidebarOpen(false)
+    }, [pathname])
 
     const handleLogout = async () => {
         await supabase.auth.signOut()
@@ -32,11 +38,20 @@ export default function DashboardLayout({
     const navItems = [
         { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Blog Posts', href: '/dashboard/posts', icon: FileText },
+        { name: 'Categories', href: '/dashboard/categories', icon: Tags },
         { name: 'Settings', href: '/dashboard/settings', icon: Settings },
     ]
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
+            {/* Mobile Overlay */}
+            {isSidebarOpen && (
+                <div
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+                />
+            )}
+
             {/* Sidebar */}
             <aside
                 className={`
@@ -95,13 +110,16 @@ export default function DashboardLayout({
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0">
-                <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4 lg:hidden">
-                    <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-                    >
-                        <Menu size={24} />
-                    </button>
+                <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4 lg:hidden sticky top-0 z-30">
+                    <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900 dark:text-white">Dashboard</span>
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                        >
+                            <Menu size={24} />
+                        </button>
+                    </div>
                 </header>
 
                 <main className="flex-1 p-4 md:p-8 overflow-y-auto">

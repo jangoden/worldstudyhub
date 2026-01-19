@@ -1,45 +1,31 @@
 import Link from "next/link";
-import Image from "next/image";
+import { createClient } from "@/lib/supabase/server";
+import { format } from "date-fns";
 
-interface RelatedArticle {
-    title: string;
-    image: string;
-    slug: string;
-    date: string;
-}
+export async function BlogSidebar() {
+    const supabase = await createClient();
 
-export function BlogSidebar() {
-    const topics = [
-        { name: "Student Life", count: 12 },
-        { name: "Scholarships", count: 8 },
-        { name: "Career Guide", count: 15 },
-        { name: "Study Abroad", count: 24 },
-        { name: "Language Learning", count: 6 },
-    ];
+    // Fetch Categories with Post Counts
+    // Note: This assumes the foreign key 'posts.category_id' -> 'categories.id' is set up.
+    // If not, it might fail or return null for posts.
+    // We use a safe join if possible, or just fetch categories.
+    const { data: categories } = await supabase
+        .from('categories')
+        .select(`
+            name,
+            slug,
+            posts (count)
+        `)
+        .order('name');
 
-    const relatedArticles: RelatedArticle[] = [
-        {
-            title: "Top 10 Universities in Europe for International Students",
-            slug: "top-universities-europe",
-            date: "Oct 20, 2026",
-            image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuDBml-BUfTGEBY-CK1pACrSxNwN_kdyGAjVRW_-ihja1WtlzN3y9gWWl42_K4J8Ts7rQgSh2faGxXfWZKtkB5b--GMNSvGOXSKCn2Vdb6CFR2lOboaN2_-yNDRuUlb4Vt_H6VUv4a5JQRJkdLWHwsuHTmpN3GippVLIoFv5CuUUj2_oElnYxB4jUj-ztHuIJiyQhBVfxbGERMUzfBkZsvB2RzHPh6zu6DMa_Tq6fFtORATtpFSYU4-Y-AC_XF1S2F8XPbsNJbg-7FdA",
-        },
-        {
-            title: "How to specificy Ace Your IELTS Exam",
-            slug: "ace-ielts-exam",
-            date: "Sep 15, 2026",
-            image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuAwOOMJH9Oi1UBjR22dVZS6i-VdK3Ion2tuyisI2BmyiKhTUOsl-7T8SkQZhJmJLYkQ7As-Kd7qB2PYHgcTFsAGpeokf7Mp7aHawdZxsj9EdwVI6DBfCcEcl3OKh-2HDbhdzHp5YRru3p2u1x7GnD-qjrJYIi1ZcnYfbFhzFdTiv0ewhSgO7r-ekSR5QIaPtwDsq9Sl1diCop1laDV_aSjS8Fhd58NkrVoW0wOpl-vrBRAtaXxfyWsKfLn7p5TIOuc9Mixrm8GQ3S0-",
-        },
-        {
-            title: "Budgeting Tips for Students in the UK",
-            slug: "budgeting-tips-uk",
-            date: "Aug 28, 2026",
-            image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuDBml-BUfTGEBY-CK1pACrSxNwN_kdyGAjVRW_-ihja1WtlzN3y9gWWl42_K4J8Ts7rQgSh2faGxXfWZKtkB5b--GMNSvGOXSKCn2Vdb6CFR2lOboaN2_-yNDRuUlb4Vt_H6VUv4a5JQRJkdLWHwsuHTmpN3GippVLIoFv5CuUUj2_oElnYxB4jUj-ztHuIJiyQhBVfxbGERMUzfBkZsvB2RzHPh6zu6DMa_Tq6fFtORATtpFSYU4-Y-AC_XF1S2F8XPbsNJbg-7FdA",
-        },
-    ];
+    // Fetch Recent/Trending Articles (Published)
+    // We'll just fetch the 3 most recent for "Trending Now" for simplicity
+    const { data: recentPosts } = await supabase
+        .from('posts')
+        .select('title, slug, created_at, image_url')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(3);
 
     return (
         <aside className="space-y-10 lg:sticky lg:top-24">
@@ -76,56 +62,65 @@ export function BlogSidebar() {
                 </div>
             </div>
 
-            {/* Topics */}
+            {/* Topics (Dynamic) */}
             <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                     <span className="w-1 h-6 bg-accent rounded-full"></span>
-                    Popular Topics
+                    Categories
                 </h3>
                 <div className="flex flex-col gap-2">
-                    {topics.map((topic) => (
+                    {categories?.map((topic: any) => (
                         <Link
                             key={topic.name}
-                            href={`/blog/topic/${topic.name.toLowerCase().replace(" ", "-")}`}
+                            href={`/blog?category=${topic.id}`} // Simple filter via query param
                             className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 group transition-all"
                         >
                             <span className="text-slate-600 dark:text-slate-400 font-medium group-hover:text-primary transition-colors">
                                 {topic.name}
                             </span>
                             <span className="text-xs font-semibold px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:bg-white group-hover:shadow-sm transition-all">
-                                {topic.count}
+                                {topic.posts?.[0]?.count || 0}
                             </span>
                         </Link>
                     ))}
+                    {(!categories || categories.length === 0) && (
+                        <p className="text-sm text-slate-500">No categories found.</p>
+                    )}
                 </div>
             </div>
 
-            {/* Related Articles */}
+            {/* Recent Articles (Dynamic) */}
             <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                     <span className="w-1 h-6 bg-accent rounded-full"></span>
-                    Trending Now
+                    Recent Posts
                 </h3>
                 <div className="flex flex-col gap-6">
-                    {relatedArticles.map((article, i) => (
+                    {recentPosts?.map((article, i) => (
                         <Link
                             key={i}
                             href={`/blog/${article.slug}`}
                             className="group flex gap-4 items-start"
                         >
-                            <div className="shrink-0 w-20 h-20 rounded-xl overflow-hidden relative shadow-sm">
-                                <img
-                                    src={article.image}
-                                    alt={article.title}
-                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                />
+                            <div className="shrink-0 w-20 h-20 rounded-xl overflow-hidden relative shadow-sm border border-slate-100 dark:border-slate-800">
+                                {article.image_url ? (
+                                    <img
+                                        src={article.image_url}
+                                        alt={article.title}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300">
+                                        <span className="material-symbols-outlined text-2xl">image</span>
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <h4 className="font-bold text-slate-900 dark:text-slate-200 leading-snug text-sm mb-2 line-clamp-2 group-hover:text-primary transition-colors">
                                     {article.title}
                                 </h4>
                                 <p className="text-xs text-slate-500 font-medium">
-                                    {article.date}
+                                    {format(new Date(article.created_at), 'MMM dd, yyyy')}
                                 </p>
                             </div>
                         </Link>
